@@ -4,6 +4,9 @@ const app = express();
 
 app.use(express.json());
 
+const timeRouter = require("./routes/timeRoutes");
+app.use("/api", timeRouter);
+
 app.get("/", (req, res) => {
   res.send("Hello, World!");
 });
