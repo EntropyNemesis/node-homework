@@ -14,3 +14,5 @@ module.exports = {
   getTime,
   echoBody,
 };
+
+// getTime and echoBody are route handlers. route handlers are part of a middleware system.
