@@ -20,11 +20,22 @@ function register(req, res) {
 };
 
 function logon(req, res) {
+    const {email, password} = req.body;
 
+    const registeredUser = global.users.find(user => user.email === email)
+        if (!registeredUser || registeredUser.password !== password) {
+            res.status(401).json({message: "Could not log on, due to invalid email or password."})
+            return;
+        }
+        
+        global.user_id = registeredUser;
+        res.status(200).json({name: registeredUser.name, email: registeredUser.email})
+        
 };
 
 function logoff(req, res) {
-
+    global.user_id = null
+    res.status(200).json({message: "You have successfully logged out. See you soon!"})
 }
 
 module.exports = {
