@@ -10,16 +10,29 @@ const { randomUUID } = require("crypto");
 
 app.use((req, res, next) => {
   req.requestId = randomUUID();
-  res.setHeader("X-Request-Id", req.requestId);
+  res.set({
+    'X-Request-Id': req.requestId
+  });
   next();
 });
 
+//logger
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}]: ${req.method} ${req.path} (${req.requestId})`)
   next();
 });
 
-app.use(express.json());
+//setting security headers in optional task 14
+app.use((req, res, next) => {
+    res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block'
+  });
+  next();
+});
+
+app.use(express.json({ limit: "1mb" }));
 
 app.use(express.static(path.join(__dirname, '/public')));
 
