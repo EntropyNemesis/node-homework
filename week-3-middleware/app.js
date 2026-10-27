@@ -23,9 +23,26 @@ app.use(express.json());
 
 app.use(express.static(path.join(__dirname, '/public')));
 
-
 app.use("/", dogsRouter);// Do not remove this line
 
+function notFound(req, res) {
+  res.status(404).json({
+    "error": "Route not found",
+    "requestId": req.requestId
+  });
+}
+
+app.use(notFound);
+
+function errorHandler(err, req, res, next) {
+  console.error(err);
+  res.status(500).json({
+    "error": "Internal Server Error",
+    "requestId": req.requestId
+  });
+}
+
+app.use(errorHandler);
 
 if (require.main === module) {
   app.listen(3000, () => {
