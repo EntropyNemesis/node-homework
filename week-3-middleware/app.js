@@ -62,12 +62,19 @@ function notFound(req, res) {
 app.use(notFound);
 
 function errorHandler(err, req, res, next) {
-  console.error(err);
-  res.status(500).json({
-    "error": "Internal Server Error",
-    "requestId": req.requestId
+  const statusCode = err.statusCode || 500;
+
+  if (statusCode >= 400 && statusCode < 500) {
+    console.warn(`WARN: ${err.name} - ${err.message}`);
+  } else {
+    console.error(`ERROR: ${err.name} - ${err.message}`);
+  }
+
+  res.status(statusCode).json({
+    error: statusCode === 500 ? "Internal Server Error" : err.message,
+    requestId: req.requestId,
   });
-}
+};
 
 app.use(errorHandler);
 
