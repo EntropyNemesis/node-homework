@@ -1,10 +1,38 @@
+//these imports, involving the built-in crypto module, enable us to hash the passwords
+const crypto = require("crypto");
+const util = require("util");
+const scrypt = util.promisify(crypto.scrypt);
+
+async function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const derivedKey = await scrypt(password, salt, 64);
+  return `${salt}:${derivedKey.toString("hex")}`;
+}
+
+async function comparePassword(inputPassword, storedHash) {
+  const [salt, key] = storedHash.split(":");
+  const keyBuffer = Buffer.from(key, "hex");
+  const derivedKey = await scrypt(inputPassword, salt, 64);
+  return crypto.timingSafeEqual(keyBuffer, derivedKey);
+}
+
 function register(req, res) {
   //builds the full user object with credentials. req.body is the parsed JSON the client sent, and we are pulling the 3 relevant fields from it.
-  const userCredentials = {
+  /*const userCredentials = {
     name: req.body.name,
     email: req.body.email,
     password: req.body.password,
+  };  */
+
+  const hashedPassword = await hashPassword(password);
+
+  const userCredentials = {
+    email,
+    name,
+    hashedPassword,
   };
+
+
 
   //save the new user creds/profile object in global.users, the temporary in-memory "database" (array). push adds this user to the end.
   global.users.push(userCredentials);
@@ -31,6 +59,10 @@ function logon(req, res) {
         global.user_id = registeredUser;
         res.status(200).json({name: registeredUser.name, email: registeredUser.email})
         
+        const goodCredentials = await comparePassword(
+          password,
+          user.hashedPassword,
+        );
 };
 
 function logoff(req, res) {
