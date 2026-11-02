@@ -25,6 +25,7 @@ function create() {
     Push the task into global.tasks
     Return status 201
     Return the task without userId  */
+    const { userId, ...sanitizedTask } = task;
 
 }
 

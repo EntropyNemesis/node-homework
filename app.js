@@ -14,13 +14,13 @@ app.use("/api", timeRouter);
 const userRouter = require("./routes/userRoutes");
 app.use("/api/users", userRouter);
 
-app.get("/", (req, res) => {
-  res.send("Hello, World!");
-});
-
 const authMiddleware = require("./middleware/auth");
 const taskRouter = require("./routes/taskRoutes");
 app.use("/api/tasks", authMiddleware, taskRouter);
+
+app.get("/", (req, res) => {
+  res.send("Hello, World!");
+});
 
 app.post("/testpost", (req, res) => {
   res.status(200).json({
