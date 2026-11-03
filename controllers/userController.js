@@ -45,7 +45,7 @@ async function comparePassword(inputPassword, storedHash) {
     hashedPassword: hashedInitialPassword,
   };
 
-  //save the new user creds/profile object in global.users, the temporary in-memory "database" (array). push adds this user to the end.
+  //store the new user creds/profile object in global.users, the temporary in-memory "database" (array). push adds this user to the end.
   global.users.push(userCredentials);
 
   //mark the user as logged in
@@ -62,19 +62,21 @@ async function logon(req, res) {
     const {email, password} = req.body;
 
     const registeredUser = global.users.find(user => user.email === email)
-        if (!registeredUser || registeredUser.password !== password) {
+
+    const goodCredentials = registeredUser && await comparePassword(
+        password,
+        registeredUser.hashedPassword,
+        );
+
+        if (!goodCredentials) {
             res.status(401).json({message: "Could not log on, due to invalid email or password."})
             return;
         }
-        
+      
         global.user_id = registeredUser;
         res.status(200).json({name: registeredUser.name, email: registeredUser.email})
-        
-        const goodCredentials = await comparePassword(
-          password,
-          user.hashedPassword,
-        );
-};
+ };         
+
 
 function logoff(req, res) {
     global.user_id = null
