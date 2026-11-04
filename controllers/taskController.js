@@ -9,20 +9,14 @@ const taskCounter = (() => {
   };  
 })();
 
-/*create should:
-  Validate the request body
-  Create a task with an ID
-  Store the current user's email in userId
-  Push the task into global.tasks
-  Return status 201
-  Return the task without userId  */
+
 async function create(req, res) {
   //Validates the request body
   if (!req.body) req.body = {};
   const { error, value } = taskSchema.validate(req.body, { abortEarly: false });
   if (error) return res.status(400).json({message: error.message});
 
-  // creates and store the task with an ID from the task counter
+  // creates and store the task with an ID from the task counter, and with the current user's id in a userId field
   const newTask = { id: taskCounter(), userId: global.user_id.email, ...value };
 
   //Pushes the task into global.tasks
@@ -53,13 +47,15 @@ function index(req, res) {
   res.status(200).json(sanitizedUserTasks);
 };
 
-async function show() {
+async function show(req, res) {
+
 /*  show should:
     Read req.params.id
     Find a task with that ID and the current user's email
     Return the task without userId
     Return 404 if no matching task exists   */
 
+  //reads req.params.id
   const taskId = parseInt(req.params?.id);
 
   if (!taskId) {
@@ -67,9 +63,28 @@ async function show() {
       message: "The task ID passed is not valid.",
     });
   }
-}
 
-function update() {
+  //Finds a task with that ID and the current user's email
+  const shownTask = global.tasks.find((task) =>
+    task.id === taskId &&
+    task.userId === global.user_id.email,
+  );
+
+
+  if (!shownTask) {
+    return res.status(404).json({
+      message: "No matching tasks were found.",
+    });
+  }
+
+  //uses destructuring to create sanitizedTask, a copy of shownTask but excluding the userId
+  const {userId, ...sanitizedTask} = shownTask;
+
+  res.status(200).json(sanitizedTask)
+
+};
+
+async function update(res, req) {
 /*  update should:
 
     Validate the patch body
