@@ -18,12 +18,6 @@ async function comparePassword(inputPassword, storedHash) {
 }
 
   async function register(req, res) {
-  //builds the full user object with credentials. req.body is the parsed JSON the client sent, and we are pulling the 3 relevant fields from it.
-  /*const userCredentials = {
-    name: req.body.name,
-    email: req.body.email,
-    password: req.body.password,
-  };  */
     if (!req.body) req.body = {};
     //checking req.body before creating user
     const { error, value } = userSchema.validate(req.body, { abortEarly: false });
