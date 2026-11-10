@@ -3,3 +3,20 @@ SELECT orders.order_id, SUM(products.price * line_items.quantity) AS total_price
 
 #Task 2 Query
 SELECT c.customer_name, AVG(total_price) AS average_order_price FROM customers c JOIN (SELECT o.order_id, o.customer_id, SUM(products.price * line_items.quantity) AS total_price FROM orders o JOIN line_items ON o.order_id = line_items.order_id JOIN products ON line_items.product_id = products.product_id GROUP BY o.order_id) as t ON c.customer_id = t.customer_id GROUP BY c.customer_id, c.customer_name ORDER BY c.customer_name; 
+
+#Task 3 Queries
+SELECT customer_id FROM customers WHERE customer_name = 'Perez and Sons';
+
+SELECT employee_id FROM employees WHERE first_name = 'Miranda' AND last_name = 'Harris'; 
+
+SELECT product_id FROM products ORDER BY price ASC LIMIT 5;
+
+BEGIN;
+INSERT INTO orders (date,customer_id,employee_id) VALUES ('2026-11-05', 16, 7) RETURNING order_id;
+INSERT INTO line_items (order_id, product_id, quantity) VALUES (250, 23, 10), (250, 18, 10), (250, 43, 10), (250, 9, 10), (250, 44, 10);
+COMMIT;
+
+SELECT * FROM line_items WHERE order_id = 250;
+
+#Task 4 Queries
+SELECT e.first_name, e.last_name, COUNT(o.order_id) AS order_count FROM employees e JOIN orders o ON e.employee_id = o.employee_id GROUP BY e.employee_id, e.first_name, e.last_name HAVING COUNT(o.order_id) > 5 ORDER BY e.last_name ASC;
