@@ -4,8 +4,6 @@ const app = express();
 app.use(express.json());
 
 global.user_id = null;
-global.users = [];
-global.tasks = [];
 
 const timeRouter = require("./routes/timeRoutes");
 app.use("/api", timeRouter);
