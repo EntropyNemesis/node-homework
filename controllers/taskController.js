@@ -1,4 +1,5 @@
 const { taskSchema, patchTaskSchema } = require("../validation/taskSchema");
+const pool = require("../db/pg-pool");
 
 //taskCounter is temporary. when connecting to a real database later, it will create IDs for tasks.
 const taskCounter = (() => {
@@ -16,35 +17,25 @@ async function create(req, res) {
   const { error, value } = taskSchema.validate(req.body, { abortEarly: false });
   if (error) return res.status(400).json({message: error.message});
 
-  // creates and store the task with an ID from the task counter, and with the current user's id in a userId field
-  const newTask = { id: taskCounter(), userId: global.user_id.email, ...value };
+  const result = await pool.query(`INSERT INTO tasks (title, is_completed, user_id)
+    VALUES ( $1, $2, $3 ) RETURNING id, title, is_completed`,
+    [value.title, value.isCompleted, global.user_id]);
+  const task = result.rows[0];
 
-  //Pushes the task into global.tasks
-  global.tasks.push(newTask);
-
-  //uses destructuring to create sanitizedTask, a copy of newTask but excluding the userId
-  const {userId, ...sanitizedTask} = newTask;
-
-  res.status(201).json(sanitizedTask)
+  res.status(201).json(task);
 };
 
-function index(req, res) {
-  //finds tasks owned by the logged-in user
-  const userTasks = global.tasks.filter((task) =>
-    task.userId === global.user_id.email,
+//finds tasks owned by the logged-in user
+async function index(req, res) {
+  const result = await pool.query("SELECT id, title, is_completed FROM tasks WHERE user_id = $1",
+    [global.user_id]
   );
+  const tasks = result.rows;   
 
   //returning 404 if that user has no tasks
-  if (userTasks.length === 0) return res.status(404).json({message: "No tasks were found for this user."});
-  
-  //returning the relevant user's tasks after excluding the userId from each one in the array
-  const sanitizedUserTasks = userTasks.map((task) => {
-    const {userId, ...sanitizedTask} = task;
-    return sanitizedTask;
-  });
+  if (tasks.length === 0) return res.status(404).json({message: "No tasks were found for this user."});
 
-  //returns 200 code with the new array
-  res.status(200).json(sanitizedUserTasks);
+  res.status(200).json(tasks);
 };
 
 async function show(req, res) {
