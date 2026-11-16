@@ -1,5 +1,4 @@
 const prisma = require("./db/prisma");
-const pool = require("./db/pg-pool");
 const express = require("express");
 const app = express();
 app.use(express.json());
@@ -75,10 +74,7 @@ async function shutdown(code = 0) {
     });
     console.log("HTTP server closed.");
 
-    // Close all PostgreSQL connections after the HTTP server has stopped.
-    await pool.end();
-    console.log("PostgreSQL connection pool closed.");
-    
+    // Close all PostgreSQL connections after the HTTP server has stopped. 
     await prisma.$disconnect();
     console.log("Prisma disconnected");
   } catch (err) {
