@@ -1,10 +1,9 @@
+const prisma = require("../db/prisma");
 //these imports, involving the built-in crypto module, enable us to hash the passwords
 const crypto = require("crypto");
 const util = require("util");
 const scrypt = util.promisify(crypto.scrypt);
 const { userSchema } = require("../validation/userSchema");
-//the require import below enables db connection
-const pool = require("../db/pg-pool");
 
 async function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString("hex");
@@ -32,28 +31,24 @@ async function register(req, res, next) {
 
   // use value.email, value.name, and value.password after this point
 
-  value.hashed_password = await hashPassword(value.password);
-  let result = null;
-
+  value.hashedPassword = await hashPassword(value.password);
+  let user = null;
   try {
-    result = await pool.query(
-      `INSERT INTO users (email, name, hashed_password)
-          VALUES ($1, $2, $3) RETURNING id, email, name`,
-      [value.email, value.name, value.hashed_password],
-    ); // note: using a parameterized query
-  } catch (e) {
+    user = await prisma.user.create({
+      data: { name: value.name, email: value.email, hashedPassword: value.hashedPassword },
+      select: { name: true, email: true, id: true} // specify the column values to return
+    });
+  } catch (err) {
     // the email might already be registered
-    if (e.code === "23505") {
+    if (err.name === "PrismaClientKnownRequestError" && err.code === "P2002") {
+      // send the appropriate error back -- the email was already registered
       return res
         .status(400)
         .json({ message: "A user with that email already exists." });
+    } else {
+      return next(err); // the error handler takes care of other errors
     }
-    //all other errors go to the global error handler
-    return next(e);
   }
-
-  //the new user row created by the database
-  const user = result.rows[0];
 
   //mark the user as logged in by storing their database id
   global.user_id = user.id;
@@ -63,17 +58,13 @@ async function register(req, res, next) {
 }
 
 async function logon(req, res) {
-  const { email, password } = req.body;
-
-  //const registeredUser = global.users.find(user => user.email === email)
-  const result = await pool.query("SELECT * FROM users WHERE email = $1", [
-    email,
-  ]);
-  const registeredUser = result.rows[0];
+  let { email, password } = req.body;
+  email = email.toLowerCase()
+  const registeredUser = await prisma.user.findUnique({ where: { email }});
 
   const goodCredentials =
     registeredUser &&
-    (await comparePassword(password, registeredUser.hashed_password));
+    (await comparePassword(password, registeredUser.hashedPassword));
 
   if (!goodCredentials) {
     res
