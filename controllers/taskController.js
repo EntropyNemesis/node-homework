@@ -18,15 +18,27 @@ async function create(req, res) {
 //finds tasks owned by the logged-in user
 async function index(req, res) {
 
+  // Parse pagination parameters
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const whereClause = { userId: global.user_id };
+
+  if (req.query.find) {
+    whereClause.title = {
+      contains: req.query.find,        // Matches %find% pattern
+      mode: 'insensitive'              // Case-insensitive search (ILIKE in PostgreSQL)
+    };
+  }
+
   const tasks = await prisma.task.findMany({
-    where: {
-      userId: global.user_id, // only the tasks for this user!
-    },
+    where: whereClause,
     select: { 
       id: true, 
       title: true, 
       isCompleted: true, 
-      priority: true
+      priority: true,
       createdAt: true,
       User: {
         select: {
@@ -34,13 +46,30 @@ async function index(req, res) {
           email: true
         }
       }
-    }
+    },
+    skip: skip,
+    take: limit,
+    orderBy: { createdAt: 'desc' }
   });  
+
+  // Get total count for pagination metadata
+  const totalTasks = await prisma.task.count({
+    where: whereClause
+  });
+
+  const pagination = {
+    page,
+    limit,
+    total: totalTasks,
+    pages: Math.ceil(totalTasks / limit),
+    hasNext: page * limit < totalTasks,
+    hasPrev: page > 1
+  };
 
   //returning 404 if that user has no tasks
   if (tasks.length === 0) return res.status(404).json({message: "No tasks were found for this user."});
 
-  res.status(200).json(tasks);
+  res.status(200).json({tasks, pagination});
 };
 
 async function show(req, res) {
