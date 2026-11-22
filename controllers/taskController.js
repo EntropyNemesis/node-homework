@@ -9,7 +9,7 @@ async function create(req, res) {
 
   const task = await prisma.task.create({
     data: { title: value.title, isCompleted: value.isCompleted, userId: global.user_id },
-    select: { id: true, title: true, isCompleted: true } // specify the column values to return
+    select: { id: true, title: true, isCompleted: true, priority: true } // specify the column values to return
   });
 
   res.status(201).json(task);
@@ -22,7 +22,7 @@ async function index(req, res) {
     where: {
       userId: global.user_id, // only the tasks for this user!
     },
-    select: { title: true, isCompleted: true, id: true }
+    select: { id: true, title: true, isCompleted: true, priority: true}
   });  
 
   //returning 404 if that user has no tasks
