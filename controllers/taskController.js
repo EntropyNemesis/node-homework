@@ -22,7 +22,19 @@ async function index(req, res) {
     where: {
       userId: global.user_id, // only the tasks for this user!
     },
-    select: { id: true, title: true, isCompleted: true, priority: true}
+    select: { 
+      id: true, 
+      title: true, 
+      isCompleted: true, 
+      priority: true
+      createdAt: true,
+      User: {
+        select: {
+          name: true,
+          email: true
+        }
+      }
+    }
   });  
 
   //returning 404 if that user has no tasks
