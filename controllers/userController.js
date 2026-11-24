@@ -32,15 +32,54 @@ async function register(req, res, next) {
   // use value.email, value.name, and value.password after this point
 
   value.hashedPassword = await hashPassword(value.password);
-  let user = null;
+
   try {
-    user = await prisma.user.create({
-      data: { name: value.name, email: value.email, hashedPassword: value.hashedPassword },
-      select: { name: true, email: true, id: true} // specify the column values to return
+    const result = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: { name: value.name, email: value.email, hashedPassword: value.hashedPassword },
+        select: { name: true, email: true, id: true} // specify the column values to return
     });
+
+   // Create 3 welcome tasks using createMany
+    const welcomeTaskData = [
+      { title: "Complete your profile", userId: newUser.id, priority: "medium" },
+      { title: "Add your first task", userId: newUser.id, priority: "high" },
+      { title: "Explore the app", userId: newUser.id, priority: "low" }
+    ];
+    await tx.task.createMany({ data: welcomeTaskData });
+
+    // Fetch the created tasks to return them
+    const welcomeTasks = await tx.task.findMany({
+      where: {
+        userId: newUser.id,
+        title: { in: welcomeTaskData.map(t => t.title) }
+      },
+      select: {
+        id: true,
+        title: true,
+        isCompleted: true,
+        userId: true,
+        priority: true
+      }
+    });
+
+    return { user: newUser, welcomeTasks };
+  });
+
+  //mark the user as logged in by storing their database id
+  global.user_id = result.user.id;
+
+  //sends the response as JSON
+  res.status(201).json({
+    user: result.user,
+    welcomeTasks: result.welcomeTasks,
+    transactionStatus: "success" 
+  });
+  return;
+
   } catch (err) {
     // the email might already be registered
-    if (err.name === "PrismaClientKnownRequestError" && err.code === "P2002") {
+    if (err.code === "P2002") {
       // send the appropriate error back -- the email was already registered
       return res
         .status(400)
@@ -49,13 +88,8 @@ async function register(req, res, next) {
       return next(err); // the error handler takes care of other errors
     }
   }
-
-  //mark the user as logged in by storing their database id
-  global.user_id = user.id;
-
-  //sends the response as JSON
-  res.status(201).json({ name: user.name, email: user.email });
 }
+  
 
 async function logon(req, res) {
   let { email, password } = req.body;
