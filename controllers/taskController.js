@@ -70,7 +70,7 @@ async function index(req, res) {
   };
 
   //returning 404 if that user has no tasks
-  if (tasks.length === 0) return res.status(404).json({message: "No tasks were found for this user."});
+  // if (tasks.length === 0) return res.status(404).json({message: "No tasks were found for this user."});
 
   res.status(200).json({tasks, pagination});
 };
