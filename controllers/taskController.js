@@ -8,7 +8,7 @@ async function create(req, res) {
   if (error) return res.status(400).json({message: error.message});
 
   const task = await prisma.task.create({
-    data: { title: value.title, isCompleted: value.isCompleted, userId: global.user_id },
+    data: { title: value.title, isCompleted: value.isCompleted, userId: global.user_id, priority: value.priority },
     select: { id: true, title: true, isCompleted: true, priority: true } // specify the column values to return
   });
 
@@ -94,7 +94,18 @@ async function show(req, res) {
     where: {
       id: taskId,
       userId: global.user_id}, 
-    select: { title: true, isCompleted: true, id: true }
+    select: { 
+      title: true, 
+      isCompleted: true, 
+      id: true, 
+      priority: true,
+      User: {
+        select: { 
+          name: true,
+          email: true
+        }
+      }
+    }
   });
 
   if (!task) {
@@ -137,7 +148,7 @@ async function update(req, res, next) {
         id: taskId,
         userId: global.user_id,
       },
-      select: { title: true, isCompleted: true, id: true }
+      select: { title: true, isCompleted: true, id: true, priority: true }
     });
   } catch (err) {
     if (err.code === "P2025" ) {

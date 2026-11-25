@@ -41,7 +41,7 @@ async function getUserAnalytics(req, res) {
         createdAt: true,
         userId: true,
         User: {
-        select: { name: true }
+            select: { name: true }
         }
     },
     orderBy: { createdAt: 'desc' },

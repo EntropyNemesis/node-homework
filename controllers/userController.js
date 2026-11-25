@@ -94,7 +94,14 @@ async function register(req, res, next) {
 async function logon(req, res) {
   let { email, password } = req.body;
   email = email.toLowerCase()
-  const registeredUser = await prisma.user.findUnique({ where: { email }});
+  const registeredUser = await prisma.user.findUnique({ 
+    where: { email },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      hashedPassword: true
+    }});
 
   const goodCredentials =
     registeredUser &&
