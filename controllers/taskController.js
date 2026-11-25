@@ -1,5 +1,6 @@
 const prisma = require("../db/prisma");
 const { taskSchema, patchTaskSchema } = require("../validation/taskSchema");
+const { paginationSchema } = require("../validation/inputSchema");
 
 async function create(req, res) {
   //Validates the request body
@@ -19,8 +20,10 @@ async function create(req, res) {
 async function index(req, res) {
 
   // Parse pagination parameters
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
+  const { error, value } = paginationSchema.validate(req.query, { abortEarly: false});
+  if (error) return res.status(400).json({ message: error.message });
+  const page = value.page;
+  const limit = value.limit;
   const skip = (page - 1) * limit;
 
   const whereClause = { userId: global.user_id };

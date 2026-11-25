@@ -1,4 +1,5 @@
 const prisma = require("../db/prisma");
+const { paginationSchema, searchSchema } = require("../validation/inputSchema");
 
 async function getUserAnalytics(req, res) {
 
@@ -71,8 +72,10 @@ async function getUserAnalytics(req, res) {
 
 async function getUsersWithStats(req, res) {
     // Parse pagination parameters
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const {error, value} = paginationSchema.validate(req.query, { abortEarly: false});
+    if (error) return res.status(400).json({ message: error.message });
+    const page = value.page;
+    const limit = value.limit;
     const skip = (page - 1) * limit;
 
     const usersRaw = await prisma.user.findMany({
@@ -125,16 +128,13 @@ async function getUsersWithStats(req, res) {
 }
 
 async function searchTasks(req, res) {
-    const searchQuery = req.query.q 
     // Validates search query
-    if (!searchQuery || searchQuery.trim().length < 2) {
-    return res.status(400).json({ 
-        error: "Search query must be at least 2 characters long" 
-    });
-    }
+    const {error, value} = searchSchema.validate(req.query, { abortEarly: false}); 
+    if (error) return res.status(400).json({ message: error.message });
+    const searchQuery = value.q;
 
-    // Gets limit from query (defaults to 20)
-    const limit = parseInt(req.query.limit) || 20;
+    // Gets limit from validated value
+    const limit = value.limit;
 
     // Constructs search patterns outside the query for proper parameterization
     const searchPattern = `%${searchQuery}%`;
