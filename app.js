@@ -15,6 +15,9 @@ const authMiddleware = require("./middleware/auth");
 const taskRouter = require("./routes/taskRoutes");
 app.use("/api/tasks", authMiddleware, taskRouter);
 
+const analyticsRouter = require("./routes/analyticsRoutes");
+app.use("/api/analytics", authMiddleware, analyticsRouter);
+
 app.get("/", (req, res) => {
   res.send("Hello, World!");
 });
